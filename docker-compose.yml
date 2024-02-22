@@ -1,0 +1,55 @@
+volumes:
+  redis_data:
+  postgres_data:
+  elasticsearch_data:
+
+x-app: &app
+  env_file:
+    - ./.env
+  restart: always
+
+services:
+  redis:
+    <<: *app
+    image: redis:6.0.8-alpine
+    volumes:
+      - redis_data:/data
+
+  postgres:
+    <<: *app
+    build: ./postgres
+    expose:
+      - "5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+
+  elastic-search:
+    <<: *app
+    image: elasticsearch:7.17.7
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+
+  etl:
+    <<: *app
+    build: ./etl
+    depends_on:
+      - redis
+      - postgres
+      - elastic-search
+
+  fast-api:
+    <<: *app
+    build: ./movies_api
+    expose:
+      - "8000"
+    depends_on:
+      - redis
+      - elastic-search
+
+  nginx:
+    <<: *app
+    build: ./nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - fast-api
