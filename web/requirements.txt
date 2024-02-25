@@ -3,3 +3,5 @@ python-dotenv==1.0.1
 psycopg2-binary==2.9.9
 redis==5.0.1
 celery[redis]==5.3.6
+
+pre-commit==3.6.2
