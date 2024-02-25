@@ -1,1 +1,5 @@
-Django>=4.2.0,<4.3a
+Django==4.2.10
+python-dotenv==1.0.1
+psycopg2-binary==2.9.9
+redis==5.0.1
+celery[redis]==5.3.6
