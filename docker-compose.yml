@@ -1,12 +1,14 @@
 volumes:
   redis_data:
   postgres_data:
-  elasticsearch_data:
+  flower_data_prod:
 
 x-app: &app
   env_file:
     - ./.env
   restart: always
+
+# TODO: django, nginx, celery
 
 services:
   redis:
@@ -14,42 +16,24 @@ services:
     image: redis:6.0.8-alpine
     volumes:
       - redis_data:/data
+    ports:
+      - ${DOCKER_REDIS_PORT:-6379}:6379
 
   postgres:
     <<: *app
-    build: ./postgres
-    expose:
-      - "5432"
+    image: postgres:12.0
     volumes:
       - postgres_data:/var/lib/postgresql/data/
-
-  elastic-search:
-    <<: *app
-    image: elasticsearch:7.17.7
-    volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data
-
-  etl:
-    <<: *app
-    build: ./etl
-    depends_on:
-      - redis
-      - postgres
-      - elastic-search
-
-  fast-api:
-    <<: *app
-    build: ./movies_api
-    expose:
-      - "8000"
-    depends_on:
-      - redis
-      - elastic-search
-
-  nginx:
-    <<: *app
-    build: ./nginx
     ports:
-      - "80:80"
+      - ${DOCKER_POSTGRES_PORT:-5432}:5432
+
+  flower:
+    <<: *app
+    image: mher/flower:2.0
+    command: celery flower
+    volumes:
+      - flower_data_prod:/data
+    ports:
+      - ${DOCKER_FLOWER_PORT:-5555}:5555
     depends_on:
-      - fast-api
+      - redis
