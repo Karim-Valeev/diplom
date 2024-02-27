@@ -1,0 +1,18 @@
+name: Run linters
+on: [push]
+jobs:
+  linter:
+    name: Linter
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Installing Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.10.12
+    - name: Installing dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8==5.0.4
+    - name: Flake8
+      run: flake8 -v .
