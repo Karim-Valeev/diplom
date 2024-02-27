@@ -13,7 +13,7 @@ class User(AbstractUser):
     The user model for the project.
     """
 
-    email = models.EmailField(_("электронная почта"), unique=True, blank=False)
+    email = models.EmailField(_('электронная почта'), unique=True, blank=False)
 
     class Meta:
         ordering = ('username',)
