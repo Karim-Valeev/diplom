@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{%  block title %}Main{% endblock %}
+{% block content %}
+    
+{#  TODO: Добавить описание, что за сайтик и что делает  #}
+    
+    <div class="profile center main-page-text">
+        {% if user.is_authenticated %}
+            <div>
+                <a href="{% url 'logout' %}">Выйти</a>
+            </div>
+        {% else %}
+            <div>
+                <a href="{% url 'login' %}">Войти</a>
+            </div>
+
+        {% endif %}
+        <div>
+            <a href="{% url 'registration' %}">Создать аккаунт</a>
+        </div>
+    </div>
+{% endblock %}
