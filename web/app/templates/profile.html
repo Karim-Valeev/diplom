@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{%  block title %}Профиль{% endblock %}
+{% block content %}
+    <div class="account-info-text">
+        <div>
+            Дата регистрации: {{ user.date_joined|date:"d.m.Y" }}
+        </div>
+        <div>
+            Имя пользователя: {{ user.username }}
+        </div>
+        <div>
+            Электронная почта: {{ user.email }}
+        </div>
+        <div>
+            Загруженные видео:
+        </div>
+        {% for video in  user.videos.all %}
+        	<span>
+                {{ video.title }}
+            </span>
+        {% empty %}
+            <span>У вас пока нет загруженных видео.</span>
+        {% endfor %}
+        
+    </div>
+{% endblock %}
