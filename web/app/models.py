@@ -12,13 +12,19 @@ class User(AbstractUser):
     """
     The user model for the project.
     """
-
     email = models.EmailField(_('электронная почта'), unique=True, blank=False)
+
+    # Because of how django.contrib.auth.backends.ModelBackend works.
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
 
     class Meta:
         ordering = ('username',)
         verbose_name = _('пользователь')
         verbose_name_plural = _('пользователи')
+
+    def __str__(self):
+        return self.email
 
 
 def upload_video_to(instance, filename):

@@ -14,6 +14,10 @@ venv/
 test.py
 .cache
 .pytest_cache
+staticfiles/
 
+# Large files
 extra/
 pdf_articles/
+camera_recordings/
+ml/deprecated/
