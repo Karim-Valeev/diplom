@@ -1,8 +1,6 @@
 from os.path import splitext
 
-from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import AbstractUser
-from django.contrib.contenttypes.models import ContentType
 from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -51,8 +49,12 @@ class Video(models.Model):
         verbose_name=_('пользователь'),
         related_name='videos',
     )
-    uploaded = models.DateTimeField(_('загружено'), auto_now_add=True, db_index=True)
-    updated = models.DateTimeField(_('обновлёно'), auto_now=True, db_index=True)
+    uploaded = models.DateTimeField(
+        _('загружено'), auto_now_add=True, db_index=True
+    )
+    updated = models.DateTimeField(
+        _('обновлёно'), auto_now=True, db_index=True
+    )
 
     class Meta:
         ordering = ('id',)
@@ -84,7 +86,8 @@ class Recognition(models.Model):
     )
     # TODO: statistics ???
 
-    created = models.DateTimeField(_('создано'), auto_now_add=True, db_index=True)
+    created = models.DateTimeField(
+        _('создано'), auto_now_add=True, db_index=True)
     updated = models.DateTimeField(_('обновлёно'), auto_now=True, db_index=True)
 
     class Meta:

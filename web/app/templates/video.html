@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Видео{% endblock %}
+{% block content %}
+    <div class="account-info-text">
+        <div>
+            Название видео: {{ video.title }}
+        </div>
+        <div>Плеер:</div>
+        <video width="320" height="240" controls>
+            <source src="{{ video.file.url }}" type="video/mp4">
+            Ваш браузер не поддерживает html тэг &lt;h1&gt;video&lt;/h1&gt;.
+        </video>
+    </div>
+{% endblock %}

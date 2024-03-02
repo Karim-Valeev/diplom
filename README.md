@@ -1,4 +1,8 @@
 # DIPLOM PROJECT
 
 ### Настройка и запуск:
-1. ...
+
+Celery:
+`
+celery -A server worker -l INFO
+`

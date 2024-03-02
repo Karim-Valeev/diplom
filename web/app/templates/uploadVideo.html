@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Добавить видео{% endblock %}
+
+{% block content %}
+    <form action="" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="container mt-4 mb-4">
+            <div class="row justify-content-md-center">
+                <div class="col-md-12 col-lg-5">
+                    <h1 class="h2 mb-4 center ">Добавить видео</h1>
+                    <div>
+                        <label for="title" class="form-label">Название:</label>
+                        <input type="text" name="title" id="title"
+                               required class="form-control mb-2" style="width:100%"
+                               placeholder="Введите название:" value=""/>
+                    </div>
+                    <div class="mb-4">
+                        <label for="file" class="form-label">Файл:</label>
+                        <input  type="file" class="form-control"
+                                name="file" id="file"
+                                accept="video/mp4"
+                                size="314572800">
+                    </div>
+                    {% if form.errors %}
+                        <b>Проверьте следующие поля:</b>
+                        <ul>
+                            {% for field, error in form.errors.items %}
+                                <div class="text-danger">
+                                    {{ field }}: {{ error }}
+                                </div>
+
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    {% if message %}
+                        <p>
+                            <b>{{ message }}</b>
+                        </p>
+                    {% endif %}
+
+                    <div class="center top-margin-10px">
+                        <button type="submit" class="btn btn-primary">
+                            Загрузить видео
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+{% endblock %}

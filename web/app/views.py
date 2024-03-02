@@ -1,10 +1,14 @@
-from app.forms import LoginForm, RegistrationForm
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LogoutView as DjangoLogoutView
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, FormView, TemplateView
+from django.views.generic import CreateView, DetailView, FormView, TemplateView
+
+from app.forms import LoginForm, RegistrationForm, VideoForm
+from app.mixins import OwnershipRequiredMixin
+from app.models import Video
+from app.tasks import check_celery
 
 
 class MainPageView(TemplateView):
@@ -41,3 +45,30 @@ class UserCreateView(CreateView):
 
 class ProfileView(LoginRequiredMixin, TemplateView):
     template_name = 'profile.html'
+
+    def get(self, request, *args, **kwargs):
+        check_celery.delay('TEST')
+        return super().get(request, *args, **kwargs)
+
+
+class VideoCreateView(CreateView):
+    form_class = VideoForm
+    template_name = 'uploadVideo.html'
+
+    def form_valid(self, form):
+        video = form.save(commit=False)
+        video.user = self.request.user
+        video.save()
+        return redirect('profile')
+
+
+class VideoDetailView(LoginRequiredMixin, OwnershipRequiredMixin, DetailView):
+    pk_url_kwarg = 'video_id'
+    model = Video
+    context_object_name = 'video'
+    template_name = 'video.html'
+
+
+# TODO: Понять какой тип вьюхи мне нужен
+class RecognizeActionsView():
+    pass
