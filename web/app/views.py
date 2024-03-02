@@ -3,7 +3,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LogoutView as DjangoLogoutView
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, DetailView, FormView, TemplateView
+from django.views.generic import (
+    CreateView, DeleteView, DetailView, FormView, TemplateView
+)
 
 from app.forms import LoginForm, RegistrationForm, VideoForm
 from app.mixins import OwnershipRequiredMixin
@@ -69,6 +71,31 @@ class VideoDetailView(LoginRequiredMixin, OwnershipRequiredMixin, DetailView):
     template_name = 'video.html'
 
 
+class VideoDeleteView(LoginRequiredMixin, OwnershipRequiredMixin, DeleteView):
+    pk_url_kwarg = 'video_id'
+    model = Video
+    success_url = reverse_lazy('profile')
+
+
 # TODO: Понять какой тип вьюхи мне нужен
 class RecognizeActionsView():
     pass
+
+
+# noqa # class DownloadView(View):
+# noqa #
+# noqa #     def get(self, request, *args, **kwargs):
+# noqa #         file = UploadFilesBlobStorage.objects.get(Uuid=self.kwargs['fileUUID'])
+# noqa #         filename = file.Filename
+# noqa #         file_type, _ = mimetypes.guess_type(filename)
+# noqa #         url = file.Url
+# noqa #         blob_name = url.split("/")[-1]
+# noqa #         blob_content = download_from_blob(blob_name)
+# noqa #
+# noqa #         if blob_content:
+# noqa #             response = HttpResponse(blob_content.readall(), content_type=file_type)
+# noqa #             response['Content-Disposition'] = f'attachment; filename={filename}'
+# noqa #             messages.success(request, f"{filename} was successfully downloaded")
+# noqa #             return response
+# noqa #
+# noqa #         return Http404
