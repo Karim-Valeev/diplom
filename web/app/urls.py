@@ -1,7 +1,8 @@
 from django.urls import path
 
 from app.views import (
-    LoginView, LogoutView, MainPageView, ProfileView, UserCreateView,
+    DownloadRecognitionStatisticsView, DownloadRecognizedVideoView, LoginView,
+    LogoutView, MainPageView, ProfileView, RecognizeActionsView, UserCreateView,
     VideoCreateView, VideoDeleteView, VideoDetailView
 )
 
@@ -16,8 +17,10 @@ urlpatterns = [
          VideoDetailView.as_view(), name='video'),
     path('profile/videos/<int:video_id>/delete/',
          VideoDeleteView.as_view(), name='delete_video'),
-
-    # TODO: Implement
     path('recognize-actions/<int:video_id>',
-         MainPageView.as_view(), name='recognize_actions'),
+         RecognizeActionsView.as_view(), name='recognize_actions'),
+    path('download-recognized-video/<int:rec_id>',
+         DownloadRecognizedVideoView.as_view(), name='download_recognized_video'),
+    path('download-recognition-statistics/<int:rec_id>',
+         DownloadRecognitionStatisticsView.as_view(), name='download_recognition_statistics'),
 ]

@@ -4,7 +4,7 @@ from django.contrib.auth.views import LogoutView as DjangoLogoutView
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import (
-    CreateView, DeleteView, DetailView, FormView, TemplateView
+    CreateView, DeleteView, DetailView, FormView, TemplateView, View
 )
 
 from app.forms import LoginForm, RegistrationForm, VideoForm
@@ -69,6 +69,7 @@ class VideoDetailView(LoginRequiredMixin, OwnershipRequiredMixin, DetailView):
     model = Video
     context_object_name = 'video'
     template_name = 'video.html'
+    # TODO: Как-то сюда еще статус задачи по распознаванию...
 
 
 class VideoDeleteView(LoginRequiredMixin, OwnershipRequiredMixin, DeleteView):
@@ -77,9 +78,13 @@ class VideoDeleteView(LoginRequiredMixin, OwnershipRequiredMixin, DeleteView):
     success_url = reverse_lazy('profile')
 
 
-# TODO: Понять какой тип вьюхи мне нужен
-class RecognizeActionsView():
-    pass
+class RecognizeActionsView(LoginRequiredMixin, CreateView):
+
+    def post(self, request, *args, **kwargs):
+        # Логика МЛ...
+        # TODO: Надо кинуть на ту же страницу видео
+        # return redirect('video', video_id=...)
+        return redirect('video')
 
 
 # noqa # class DownloadView(View):
@@ -99,3 +104,11 @@ class RecognizeActionsView():
 # noqa #             return response
 # noqa #
 # noqa #         return Http404
+
+
+class DownloadRecognizedVideoView(View):
+    pass
+
+
+class DownloadRecognitionStatisticsView(View):
+    pass
