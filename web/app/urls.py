@@ -1,5 +1,10 @@
-from app.views import LoginView, LogoutView, MainPageView, ProfileView, UserCreateView
 from django.urls import path
+
+from app.views import (
+    DownloadRecognitionStatisticsView, DownloadRecognizedVideoView, LoginView,
+    LogoutView, MainPageView, ProfileView, RecognizeActionsView, UserCreateView,
+    VideoCreateView, VideoDeleteView, VideoDetailView
+)
 
 urlpatterns = [
     path('', MainPageView.as_view(), name='main'),
@@ -7,10 +12,15 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),
     path('registration/', UserCreateView.as_view(), name='registration'),
     path('profile/', ProfileView.as_view(), name='profile'),
+    path('upload-video/', VideoCreateView.as_view(), name='upload_video'),
+    path('profile/videos/<int:video_id>',
+         VideoDetailView.as_view(), name='video'),
+    path('profile/videos/<int:video_id>/delete/',
+         VideoDeleteView.as_view(), name='delete_video'),
+    path('recognize-actions/<int:video_id>',
+         RecognizeActionsView.as_view(), name='recognize_actions'),
+    path('download-recognized-video/<int:rec_id>',
+         DownloadRecognizedVideoView.as_view(), name='download_recognized_video'),
+    path('download-recognition-statistics/<int:rec_id>',
+         DownloadRecognitionStatisticsView.as_view(), name='download_recognition_statistics'),
 ]
-# path("links/", generic_page_view("links"), name="links"),
-# path("about/", generic_page_view("about"), name="about"),
-# path("user_agreement/", generic_page_view("user_agreement"), name="user_agreement"),
-# path("contacts/", generic_page_view("contacts"), name="contacts"),
-# path("personal_data_policy/", generic_page_view("personal_data_policy"), name="personal_data_policy"),
-# path("registration/", UserCreateView.as_view(), name="registration"),

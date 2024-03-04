@@ -1,10 +1,19 @@
-from app.forms import LoginForm, RegistrationForm
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LogoutView as DjangoLogoutView
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, FormView, TemplateView
+from django.views.generic import (
+    CreateView, DeleteView, DetailView, FormView, TemplateView, View
+)
+
+from app.forms import LoginForm, RegistrationForm, VideoForm
+from app.logic import (
+    get_recognition_stats_response, get_recognized_video_response
+)
+from app.mixins import OwnershipRequiredMixin
+from app.models import Video
+from app.tasks import recognize_actions
 
 
 class MainPageView(TemplateView):
@@ -41,3 +50,54 @@ class UserCreateView(CreateView):
 
 class ProfileView(LoginRequiredMixin, TemplateView):
     template_name = 'profile.html'
+
+
+class VideoCreateView(CreateView):
+    form_class = VideoForm
+    template_name = 'uploadVideo.html'
+
+    def form_valid(self, form):
+        video = form.save(commit=False)
+        video.user = self.request.user
+        video.save()
+        return redirect('profile')
+
+
+class VideoDetailView(LoginRequiredMixin, OwnershipRequiredMixin, DetailView):
+    pk_url_kwarg = 'video_id'
+    model = Video
+    context_object_name = 'video'
+    template_name = 'video.html'
+    # TODO: Как-то сюда еще статус задачи по распознаванию...
+
+
+class VideoDeleteView(LoginRequiredMixin, OwnershipRequiredMixin, DeleteView):
+    pk_url_kwarg = 'video_id'
+    model = Video
+    success_url = reverse_lazy('profile')
+
+
+class RecognizeActionsView(LoginRequiredMixin, CreateView):
+
+    def post(self, request, *args, **kwargs):
+        video_id = self.kwargs['video_id']
+        recognize_actions.delay(video_id)
+        return redirect('video', video_id=video_id)
+
+
+# TODO: Надо как-то это ускорить,
+#  с дефолтным веб серваком очень медленно идет загрузка с сервера
+class DownloadRecognizedVideoView(View):
+
+    def get(self, request, *args, **kwargs):
+        rec_id = self.kwargs['rec_id']
+        response = get_recognized_video_response(rec_id)
+        return response
+
+
+class DownloadRecognitionStatisticsView(View):
+
+    def get(self, request, *args, **kwargs):
+        rec_id = self.kwargs['rec_id']
+        response = get_recognition_stats_response(rec_id)
+        return response

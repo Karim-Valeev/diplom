@@ -7,6 +7,9 @@
     <div class="profile center main-page-text">
         {% if user.is_authenticated %}
             <div>
+                <a href="{% url 'profile' %}">Профиль</a>
+            </div>
+            <div>
                 <a href="{% url 'logout' %}">Выйти</a>
             </div>
         {% else %}

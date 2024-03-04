@@ -16,11 +16,13 @@
         </div>
         {% for video in  user.videos.all %}
         	<span>
-                {{ video.title }}
+                <a href="{% url 'video' video.id %}">{{ video.title }}</a>
             </span>
         {% empty %}
             <span>У вас пока нет загруженных видео.</span>
         {% endfor %}
-
+        <div class="top-margin-10px">
+            <a class="btn btn-primary" href="{% url 'upload_video' %}" role="button">Добавить видео</a>
+        </div>
     </div>
 {% endblock %}
