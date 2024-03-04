@@ -8,9 +8,12 @@ from django.views.generic import (
 )
 
 from app.forms import LoginForm, RegistrationForm, VideoForm
+from app.logic import (
+    get_recognition_stats_response, get_recognized_video_response
+)
 from app.mixins import OwnershipRequiredMixin
 from app.models import Video
-from app.tasks import check_celery
+from app.tasks import recognize_actions
 
 
 class MainPageView(TemplateView):
@@ -48,10 +51,6 @@ class UserCreateView(CreateView):
 class ProfileView(LoginRequiredMixin, TemplateView):
     template_name = 'profile.html'
 
-    def get(self, request, *args, **kwargs):
-        check_celery.delay('TEST')
-        return super().get(request, *args, **kwargs)
-
 
 class VideoCreateView(CreateView):
     form_class = VideoForm
@@ -81,34 +80,24 @@ class VideoDeleteView(LoginRequiredMixin, OwnershipRequiredMixin, DeleteView):
 class RecognizeActionsView(LoginRequiredMixin, CreateView):
 
     def post(self, request, *args, **kwargs):
-        # Логика МЛ...
-        # TODO: Надо кинуть на ту же страницу видео
-        # return redirect('video', video_id=...)
-        return redirect('video')
+        video_id = self.kwargs['video_id']
+        recognize_actions.delay(video_id)
+        return redirect('video', video_id=video_id)
 
 
-# noqa # class DownloadView(View):
-# noqa #
-# noqa #     def get(self, request, *args, **kwargs):
-# noqa #         file = UploadFilesBlobStorage.objects.get(Uuid=self.kwargs['fileUUID'])
-# noqa #         filename = file.Filename
-# noqa #         file_type, _ = mimetypes.guess_type(filename)
-# noqa #         url = file.Url
-# noqa #         blob_name = url.split("/")[-1]
-# noqa #         blob_content = download_from_blob(blob_name)
-# noqa #
-# noqa #         if blob_content:
-# noqa #             response = HttpResponse(blob_content.readall(), content_type=file_type)
-# noqa #             response['Content-Disposition'] = f'attachment; filename={filename}'
-# noqa #             messages.success(request, f"{filename} was successfully downloaded")
-# noqa #             return response
-# noqa #
-# noqa #         return Http404
-
-
+# TODO: Надо как-то это ускорить,
+#  с дефолтным веб серваком очень медленно идет загрузка с сервера
 class DownloadRecognizedVideoView(View):
-    pass
+
+    def get(self, request, *args, **kwargs):
+        rec_id = self.kwargs['rec_id']
+        response = get_recognized_video_response(rec_id)
+        return response
 
 
 class DownloadRecognitionStatisticsView(View):
-    pass
+
+    def get(self, request, *args, **kwargs):
+        rec_id = self.kwargs['rec_id']
+        response = get_recognition_stats_response(rec_id)
+        return response
