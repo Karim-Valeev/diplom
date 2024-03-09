@@ -1,11 +1,11 @@
 import os
-import subprocess
+import subprocess  # noqa
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
-from django.conf import settings
+from django.conf import settings  # noqa
 
-from app.models import Recognition, Video
+from app.models import Recognition, Video  # noqa
 
 logger = get_task_logger('celery.task.server')
 
@@ -15,9 +15,9 @@ def recognize_actions(video_id: int):
     video: Video = Video.objects.filter(id=video_id).first()
     if video:
         logger.info('Video:  %r', video.title)
-        data = settings.YOLO_DATA_FILE
-        cfg = settings.YOLO_CONFIG_FILE
-        weights = settings.YOLO_WEIGHTS_FILE
+        # data = settings.YOLO_DATA_FILE
+        # cfg = settings.YOLO_CONFIG_FILE
+        # weights = settings.YOLO_WEIGHTS_FILE
         video_path = video.file.path
 
         print(f'{video_path=}')
@@ -28,22 +28,25 @@ def recognize_actions(video_id: int):
         new_filename = f'recognized_{filename}'
 
         result_video_path = f'{file_root}/{new_filename}'
-
+        print(result_video_path)
         # TODO: Найти команду чтобы не открывалось еще одно окно
         # TODO: Похоже надо будет капчурить и парсить выхлоп команды
         # TODO: Обернуть в класс?
 
-        code = subprocess.call(
-            f'darknet detector demo '
-            f'{data} {cfg} {weights} {video_path} '
-            f'-out_filename {result_video_path}',
-            shell=True
-        )
-        logger.info('Running terminal command returned code: %r', code)
+        # code = subprocess.call(
+        #     f'darknet detector demo '
+        #     f'{data} {cfg} {weights} {video_path} '
+        #     f'-out_filename {result_video_path}',
+        #     shell=True
+        # )
+        # logger.info('Running terminal command returned code: %r', code)
 
-        with open(result_video_path) as f:
-            print(f)
-            Recognition.objects.create()
+        logger.info('Running terminal command returned code: ')
+        import time
+        time.sleep(5)
+        # with open(result_video_path) as f:
+        #     print(f)
+        #     Recognition.objects.create()
 
     else:
         logger.info('There is no such video with id: %r', video_id)

@@ -31,6 +31,9 @@ services:
     <<: *app
     image: mher/flower:2.0
     command: celery flower
+    environment:
+      CELERY_BROKER_URL: ${FLOWER_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${FLOWER_RESULT_BACKEND}
     volumes:
       - flower_data_prod:/data
     ports:

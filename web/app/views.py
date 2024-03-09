@@ -7,13 +7,10 @@ from django.views.generic import (
     CreateView, DeleteView, DetailView, FormView, TemplateView, View
 )
 
+from app import logic
 from app.forms import LoginForm, RegistrationForm, VideoForm
-from app.logic import (
-    get_recognition_stats_response, get_recognized_video_response
-)
 from app.mixins import OwnershipRequiredMixin
 from app.models import Video
-from app.tasks import recognize_actions
 
 
 class MainPageView(TemplateView):
@@ -71,11 +68,14 @@ class VideoDetailView(LoginRequiredMixin, OwnershipRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # TODO: Достать статус нужной celery задачи
+        video = context['video']
+        status = logic.get_recognition_task_status(video)
+        context['recognition_task_status'] = status
 
-        context['recognition_task_status'] = ''
+        # TODO: Подумать над тем, давать ли возможность
+        #  начинать новые распознавания, пока идет предыдущее или нет?
 
-    # TODO: Как-то сюда еще статус задачи по распознаванию...
+        return context
 
 
 class VideoDeleteView(LoginRequiredMixin, OwnershipRequiredMixin, DeleteView):
@@ -88,11 +88,7 @@ class RecognizeActionsView(LoginRequiredMixin, CreateView):
 
     def post(self, request, *args, **kwargs):
         video_id = self.kwargs['video_id']
-        # По сути еще здесь стоит создать связанный с видосом
-        # обьект распознавания и дать ему статус таски
-        # task = recognize_actions.delay(video_id)
-        recognize_actions.delay(video_id)
-
+        logic.start_recognition(video_id)
         return redirect('video', video_id=video_id)
 
 
@@ -102,7 +98,7 @@ class DownloadRecognizedVideoView(View):
 
     def get(self, request, *args, **kwargs):
         rec_id = self.kwargs['rec_id']
-        response = get_recognized_video_response(rec_id)
+        response = logic.get_recognized_video_response(rec_id)
         return response
 
 
@@ -110,5 +106,5 @@ class DownloadRecognitionStatisticsView(View):
 
     def get(self, request, *args, **kwargs):
         rec_id = self.kwargs['rec_id']
-        response = get_recognition_stats_response(rec_id)
+        response = logic.get_recognition_stats_response(rec_id)
         return response

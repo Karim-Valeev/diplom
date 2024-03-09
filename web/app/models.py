@@ -81,9 +81,10 @@ class Recognition(models.Model):
     recognized_file = models.FileField(
         _('распознанный файл'),
         upload_to=upload_recognized_video_to,
-        null=False, blank=False,
+        null=True, blank=True,
         validators=[FileExtensionValidator(allowed_extensions=['mp4'])],
     )
+    task_id = models.CharField(_('celery задача'), max_length=36, blank=True)
     # TODO: statistics ???
 
     created = models.DateTimeField(
