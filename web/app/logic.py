@@ -12,7 +12,7 @@ class RecognitionStatuses(Enum):
     Depending on the name of the status, it returns its translation and a flag
     for the possibility of starting the next recognition.
     """
-    PENDING = 'В ожидании начала.', False
+    PENDING = 'Задача прервалась, попробуйте еще раз.', True
     STARTED = 'В процессе...', False
     SUCCESS = 'Завершилось!', True
     FAILURE = 'Возникла ошибка.', False
