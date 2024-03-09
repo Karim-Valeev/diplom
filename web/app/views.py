@@ -68,6 +68,13 @@ class VideoDetailView(LoginRequiredMixin, OwnershipRequiredMixin, DetailView):
     model = Video
     context_object_name = 'video'
     template_name = 'video.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # TODO: Достать статус нужной celery задачи
+
+        context['recognition_task_status'] = ''
+
     # TODO: Как-то сюда еще статус задачи по распознаванию...
 
 
@@ -81,7 +88,11 @@ class RecognizeActionsView(LoginRequiredMixin, CreateView):
 
     def post(self, request, *args, **kwargs):
         video_id = self.kwargs['video_id']
+        # По сути еще здесь стоит создать связанный с видосом
+        # обьект распознавания и дать ему статус таски
+        # task = recognize_actions.delay(video_id)
         recognize_actions.delay(video_id)
+
         return redirect('video', video_id=video_id)
 
 

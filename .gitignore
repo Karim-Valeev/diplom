@@ -12,6 +12,7 @@ venv/
 
 # Develop
 test.py
+test.mp4
 .cache
 .pytest_cache
 staticfiles/
