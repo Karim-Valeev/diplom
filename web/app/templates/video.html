@@ -15,14 +15,17 @@
             <div>
                 Статус распознавания действий в видео: <b>{{ recognition_task_status }}</b>
             </div>
-        {% else %}
         {% endif %}
+        {% if recognition_available %}
             <div>
                 <form action="{% url 'recognize_actions' video.id %}" method="POST">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-success">Распознать действия</button>
                 </form>
             </div>
+        {% else %}
+            <div>Запустить новое распознавание действий пока невозможно.</div>
+        {% endif %}
         <div>
             <form action="{% url 'delete_video' video.id %}" method="POST">
                 {% csrf_token %}

@@ -69,12 +69,9 @@ class VideoDetailView(LoginRequiredMixin, OwnershipRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         video = context['video']
-        status = logic.get_recognition_task_status(video)
+        status, available = logic.get_recognition_task_status(video)
         context['recognition_task_status'] = status
-
-        # TODO: Подумать над тем, давать ли возможность
-        #  начинать новые распознавания, пока идет предыдущее или нет?
-
+        context['recognition_available'] = available
         return context
 
 
