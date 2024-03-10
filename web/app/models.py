@@ -27,7 +27,7 @@ class User(AbstractUser):
 
 def upload_video_to(instance, filename):
     root, ext = splitext(filename)
-    return f'users/{instance.user_id}/{root}{ext.lower()}'
+    return f'users/{instance.user_id}/videos/{root}{ext.lower()}'
 
 
 class Video(models.Model):
@@ -63,7 +63,7 @@ class Video(models.Model):
 
 
 def upload_recognized_video_to(instance, filename):
-    return f'users/{instance.video.user_id}/recognized_{filename}'
+    return f'users/{instance.video.user_id}/recognitions/{filename}'
 
 
 class Recognition(models.Model):

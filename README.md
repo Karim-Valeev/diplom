@@ -15,3 +15,6 @@ darknet detect cfg/yolo.data cfg/yolo.cfg yolo.weights test.jpg
 darknet detector demo cfg/yolo.data cfg/yolo.cfg yolo.weights -ext_output test.mp4
 darknet detector demo yolo.data yolo.cfg yolo.weights test.mp4 -out_filename res_test.mp4
 `
+
+### Особенности:
+* Система совместима только с ОС Linux семейства Debian.

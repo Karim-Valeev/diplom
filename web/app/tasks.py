@@ -1,11 +1,10 @@
-import os
 import subprocess
 
 from celery.utils.log import get_task_logger
 from django.conf import settings
+from server.celery import app
 
 from app.models import Recognition, Video
-from server.celery import app
 
 logger = get_task_logger('celery.task.server')
 
@@ -18,34 +17,46 @@ def recognize_actions(self, video_id: int):
         cfg = settings.YOLO_CONFIG_FILE
         weights = settings.YOLO_WEIGHTS_FILE
 
+        # TODO: Подумать над тем,
+        #  чтобы добавить селери задаче своих кастомных статусов,
+        #  тк появляются различные этапы всего действия,
+        #  которые могут интересны пользователю или показательны
+        #  для Дипломной системы
+
         video_path = video.file.path
-
-        sep = os.sep
-        file_parts = video_path.split(sep)
-        file_root = sep.join(file_parts[:-1])
+        file_parts = video_path.split('/')
         filename = file_parts[-1]
-        new_filename = f'recognized_{filename}'
-        result_video_path = f'{file_root}{sep}{new_filename}'
 
-        # TODO: Найти команду чтобы не открывалось еще одно окно
-        # TODO: Похоже надо будет капчурить и парсить выхлоп команды
-        # TODO: Обернуть в класс?
+        result_video_path = (
+            f'{settings.MEDIA_ROOT}/users/'
+            f'{video.user_id}/recognitions/recognized_{filename}'
+        )
+        output_file_path = (
+            f'{settings.MEDIA_ROOT}/users/'
+            f'{video.user_id}/outputs/recognized_{filename}_output.txt'
+        )
+
+        print(f'{result_video_path=}')
 
         code = subprocess.call(
             f'darknet detector demo '
-            f'{data} {cfg} {weights} {video_path} '
-            f'-out_filename {result_video_path}',
+            f'{data} {cfg} {weights} '
+            f'-dont_show '
+            f'{video_path} -out_filename {result_video_path} '
+            f'> {output_file_path}',
             shell=True
         )
+        # TODO: Возможно стоит вывод все равно
+        #  тоже параллельно пускать в терминал
+
+        # TODO: Не очень понятно на самом деле, че эти коды значат
         logger.info('Running terminal command returned code: %r', code)
 
         task_id = self.request.id
-        recognition = Recognition.objects.filter(video_id=video_id, task_id=task_id).first()
-        file_parts = result_video_path.split(
-            f'{str(settings.MEDIA_ROOT)}{sep}'
-        )
-        recognized_file = file_parts[-1]
-        recognition.recognized_file = recognized_file
+        recognition = Recognition.objects.filter(
+            video_id=video_id, task_id=task_id).first()
+        recognition.recognized_file = result_video_path.strip(
+            f'{settings.MEDIA_ROOT}/')
         recognition.save()
         logger.info('Recognized video file saved and stored in DB.')
 
