@@ -21,6 +21,8 @@ app.autodiscover_tasks(packages=['app'])
 conf = app.conf
 conf.timezone = 'UTC'
 
+conf.task_track_started = True
+
 # Without this setting it is easy to reach limit of connection to Redis
 conf.broker_pool_limit = int(environ.get('CELERY_BROKER_POOL_LIMIT', 0))
 conf.broker_url = environ.get('CELERY_BROKER_URL', 'redis://localhost:6379')

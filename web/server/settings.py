@@ -139,8 +139,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'app.User'
 
-# TODO: login url, celery
-
 LOG_LEVEL = environ.get('LOG_LEVEL', 'INFO')
 LOGGING = {
     'version': 1,
@@ -187,3 +185,7 @@ LOGGING = {
         }
     }
 }
+
+YOLO_DATA_FILE = environ.get('YOLO_DATA_FILE')
+YOLO_CONFIG_FILE = environ.get('YOLO_CONFIG_FILE')
+YOLO_WEIGHTS_FILE = environ.get('YOLO_WEIGHTS_FILE')

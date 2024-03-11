@@ -7,13 +7,10 @@ from django.views.generic import (
     CreateView, DeleteView, DetailView, FormView, TemplateView, View
 )
 
+from app import logic
 from app.forms import LoginForm, RegistrationForm, VideoForm
-from app.logic import (
-    get_recognition_stats_response, get_recognized_video_response
-)
 from app.mixins import OwnershipRequiredMixin
 from app.models import Video
-from app.tasks import recognize_actions
 
 
 class MainPageView(TemplateView):
@@ -68,7 +65,14 @@ class VideoDetailView(LoginRequiredMixin, OwnershipRequiredMixin, DetailView):
     model = Video
     context_object_name = 'video'
     template_name = 'video.html'
-    # TODO: Как-то сюда еще статус задачи по распознаванию...
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        video = context['video']
+        status, available = logic.get_recognition_task_status(video)
+        context['recognition_task_status'] = status
+        context['recognition_available'] = available
+        return context
 
 
 class VideoDeleteView(LoginRequiredMixin, OwnershipRequiredMixin, DeleteView):
@@ -81,7 +85,7 @@ class RecognizeActionsView(LoginRequiredMixin, CreateView):
 
     def post(self, request, *args, **kwargs):
         video_id = self.kwargs['video_id']
-        recognize_actions.delay(video_id)
+        logic.start_recognition(video_id)
         return redirect('video', video_id=video_id)
 
 
@@ -91,7 +95,7 @@ class DownloadRecognizedVideoView(View):
 
     def get(self, request, *args, **kwargs):
         rec_id = self.kwargs['rec_id']
-        response = get_recognized_video_response(rec_id)
+        response = logic.get_recognized_video_response(rec_id)
         return response
 
 
@@ -99,5 +103,5 @@ class DownloadRecognitionStatisticsView(View):
 
     def get(self, request, *args, **kwargs):
         rec_id = self.kwargs['rec_id']
-        response = get_recognition_stats_response(rec_id)
+        response = logic.get_recognition_stats_response(rec_id)
         return response
