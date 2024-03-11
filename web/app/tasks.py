@@ -56,7 +56,8 @@ def recognize_actions(self, video_id: int):
         recognition = Recognition.objects.filter(
             video_id=video_id, task_id=task_id).first()
         recognition.recognized_file = result_video_path.strip(
-            f'{settings.MEDIA_ROOT}/')
+            f'{settings.MEDIA_ROOT}/'
+        )
         recognition.save()
         logger.info('Recognized video file saved and stored in DB.')
 
