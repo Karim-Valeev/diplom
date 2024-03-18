@@ -66,6 +66,18 @@ def upload_recognized_video_to(instance, filename):
     return f'users/{instance.video.user_id}/recognitions/{filename}'
 
 
+def upload_output_file_to(instance, filename):
+    return f'users/{instance.video.user_id}/outputs/{filename}'
+
+
+def upload_stat_graph_to(instance, filename):
+    return f'users/{instance.video.user_id}/stats/graphs{filename}'
+
+
+def upload_stat_pie_chart_to(instance, filename):
+    return f'users/{instance.video.user_id}/stats/pie_charts/{filename}'
+
+
 class Recognition(models.Model):
     """
     A model of user video recognition data.
@@ -79,13 +91,30 @@ class Recognition(models.Model):
         related_name='recognitions',
     )
     recognized_file = models.FileField(
-        _('распознанный файл'),
+        _('распознанный видео файл'),
         upload_to=upload_recognized_video_to,
         null=True, blank=True,
         validators=[FileExtensionValidator(allowed_extensions=['mp4'])],
     )
     task_id = models.CharField(_('celery задача'), max_length=36, blank=True)
-    # TODO: statistics ???
+    output_file = models.FileField(
+        _('вывод команды распознавания'),
+        upload_to=upload_output_file_to,
+        null=True, blank=True,
+        validators=[FileExtensionValidator(allowed_extensions=['txt'])],
+    )
+    stat_graph = models.ImageField(
+        _('график кол-ва действий'),
+        upload_to=upload_stat_graph_to,
+        null=True, blank=True,
+        validators=[FileExtensionValidator(allowed_extensions=['jpg'])],
+    )
+    stat_pie_chart = models.ImageField(
+        _('круговая диаграмма'),
+        upload_to=upload_stat_pie_chart_to,
+        null=True, blank=True,
+        validators=[FileExtensionValidator(allowed_extensions=['jpg'])],
+    )
 
     created = models.DateTimeField(
         _('создано'), auto_now_add=True, db_index=True)
