@@ -7,7 +7,7 @@
             Название видео: {{ video.title }}
         </div>
         <div>Плеер:</div>
-        <video width="320" height="240" controls>
+        <video width="320" height="240" controls muted>
             <source src="{{ video.file.url }}" type="video/mp4">
             Ваш браузер не поддерживает html тэг &lt;h1&gt;video&lt;/h1&gt;.
         </video>
@@ -27,16 +27,36 @@
             <div>Запустить новое распознавание действий пока невозможно.</div>
         {% endif %}
         <div>
-            <form action="{% url 'recognize_actions' video.id %}" method="POST">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-success">Распознать действия</button>
-            </form>
-        </div>
-        <div>
             <form action="{% url 'delete_video' video.id %}" method="POST">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-danger">Удалить видео</button>
             </form>
         </div>
+        <hr>
+        <div class="top-margin-10px">
+            <div>Распознавания</div>
+            {% for recognition in video.recognitions.all %}
+                {% if recognition.recognized_file %}
+                <div>Дата: {{ recognition.created|date:"d.m.Y" }}</div>
+
+                <div>Результаты распознавания:</div>
+                    <video width="320" height="240" controls muted>
+                        <source src="{{ recognition.recognized_file.url }}" type="video/mp4">
+                        Ваш браузер не поддерживает html тэг &lt;h1&gt;video&lt;/h1&gt;.
+                    </video>
+
+                <div>Статистика:</div>
+                <div class="top-margin-10px">
+                <span>
+                    <img src="{{ recognition.stat_graph.url }}" alt="" width="425" height="300">
+                </span>
+                    <span>
+                    <img src="{{ recognition.stat_pie_chart.url }}" alt="" width="425" height="300">
+                </span>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
     </div>
 {% endblock %}
