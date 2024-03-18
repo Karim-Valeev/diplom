@@ -37,23 +37,41 @@
             <div>Распознавания</div>
             {% for recognition in video.recognitions.all %}
                 {% if recognition.recognized_file %}
-                <div>Дата: {{ recognition.created|date:"d.m.Y" }}</div>
+                    <div>Дата: {{ recognition.created|date:"d.m.Y" }}</div>
 
-                <div>Результаты распознавания:</div>
+                    <div>Результаты распознавания:</div>
                     <video width="320" height="240" controls muted>
                         <source src="{{ recognition.recognized_file.url }}" type="video/mp4">
                         Ваш браузер не поддерживает html тэг &lt;h1&gt;video&lt;/h1&gt;.
                     </video>
-
-                <div>Статистика:</div>
-                <div class="top-margin-10px">
-                <span>
-                    <img src="{{ recognition.stat_graph.url }}" alt="" width="425" height="300">
-                </span>
-                    <span>
-                    <img src="{{ recognition.stat_pie_chart.url }}" alt="" width="425" height="300">
-                </span>
-                </div>
+                    <div>
+                        <form action="{% url 'download_recognized_video' recognition.id %}" method="GET">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary">Скачать видео</button>
+                        </form>
+                    </div>
+                    <div class="top-margin-10px">Статистика:</div>
+                    {# TODO: Добавить дисплей флекс через стили #}
+                    <div class="top-margin-10px">
+                        <span>
+                            <img src="{{ recognition.stat_graph.url }}" alt="" width="425" height="300">
+                            <form action="{% url 'download_recognition_statistics' recognition.id %}" method="GET">
+                                {% csrf_token %}
+                                <input type="text" name="stat_type" hidden value="graph">
+                                <button type="submit" class="btn btn-primary">Скачать график</button>
+                            </form>
+                        </span>
+                        <span>
+                            <img src="{{ recognition.stat_pie_chart.url }}" alt="" width="425" height="300">
+                            <form action="{% url 'download_recognition_statistics' recognition.id %}" method="GET">
+                                {% csrf_token %}
+                                <input type="text" name="stat_type" hidden value="pie_chart">
+                                <button type="submit" class="btn btn-primary">Скачать диаграмму</button>
+                            </form>
+                        </span>
+                    </div>
+                    <div>
+                    </div>
                 {% endif %}
             {% endfor %}
         </div>

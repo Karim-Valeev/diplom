@@ -89,8 +89,6 @@ class RecognizeActionsView(LoginRequiredMixin, CreateView):
         return redirect('video', video_id=video_id)
 
 
-# TODO: Надо как-то это ускорить,
-#  с дефолтным веб серваком очень медленно идет загрузка с сервера
 class DownloadRecognizedVideoView(View):
 
     def get(self, request, *args, **kwargs):
@@ -102,6 +100,7 @@ class DownloadRecognizedVideoView(View):
 class DownloadRecognitionStatisticsView(View):
 
     def get(self, request, *args, **kwargs):
+        stat_type = request.GET.get('stat_type')
         rec_id = self.kwargs['rec_id']
-        response = logic.get_recognition_stats_response(rec_id)
+        response = logic.get_recognition_stats_response(rec_id, stat_type)
         return response
