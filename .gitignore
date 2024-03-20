@@ -16,6 +16,7 @@ test.mp4
 .cache
 .pytest_cache
 staticfiles/
+buffer.mp4
 
 # Large files
 extra/

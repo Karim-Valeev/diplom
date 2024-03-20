@@ -13,10 +13,11 @@ class RecognitionStatuses(Enum):
     Depending on the name of the status, it returns its translation and a flag
     for the possibility of starting the next recognition.
     """
-    PENDING = 'Задача прервалась, попробуйте еще раз.', True
-    STARTED = 'В процессе...', False
+    PENDING = 'Задача в ожидании запуска или утеряна, можете попробовать еще раз.', True
+    STARTED = 'Задача запустилась.', False
+    RECOGNIZING = 'Идет распознавание...', False
     SUCCESS = 'Завершилось!', True
-    FAILURE = 'Возникла ошибка.', False
+    FAILURE = 'Возникла ошибка. Свяжитесь с администратором.', False
 
 
 def start_recognition(video_id: int):

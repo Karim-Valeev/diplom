@@ -3,11 +3,10 @@
 {% block title %}Видео{% endblock %}
 {% block content %}
     <div class="account-info-text">
-        <div>
-            Название видео: {{ video.title }}
-        </div>
+        <div>Название видео: <b>{{ video.title }}</b></div>
+        <div>Дата загрузки: {{ video.uploaded|date:"d.m.Y h:m" }}</div>
         <div>Плеер:</div>
-        <video width="320" height="240" controls muted>
+        <video width="400" height="300" controls muted>
             <source src="{{ video.file.url }}" type="video/mp4">
             Ваш браузер не поддерживает html тэг &lt;h1&gt;video&lt;/h1&gt;.
         </video>
@@ -34,47 +33,51 @@
         </div>
         <hr>
         <div class="top-margin-10px">
-            <div>Распознавания</div>
+            <b>Распознавания:</b>
             {% for recognition in video.recognitions.all %}
-                {% if recognition.recognized_file %}
-                    <div>Дата: {{ recognition.created|date:"d.m.Y" }}</div>
+                    <div class="top-margin-10px">Дата: {{ recognition.created|date:"d.m.Y h:m" }}</div>
+                    <div class="recognition">
+                        <div>
+                            <div class="center">Результаты распознавания:</div>
 
-                    <div>Результаты распознавания:</div>
-                    <video width="320" height="240" controls muted>
-                        <source src="{{ recognition.recognized_file.url }}" type="video/mp4">
-                        Ваш браузер не поддерживает html тэг &lt;h1&gt;video&lt;/h1&gt;.
-                    </video>
-                    <div>
-                        <form action="{% url 'download_recognized_video' recognition.id %}" method="GET">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-primary">Скачать видео</button>
-                        </form>
-                    </div>
-                    <div class="top-margin-10px">Статистика:</div>
-                    {# TODO: Добавить дисплей флекс через стили #}
-                    <div class="top-margin-10px">
-                        <span>
-                            <img src="{{ recognition.stat_graph.url }}" alt="" width="425" height="300">
-                            <form action="{% url 'download_recognition_statistics' recognition.id %}" method="GET">
+                            {% if recognition.recognized_file %}
+                            <video width="400" height="300" controls muted>
+                                <source src="{{ recognition.recognized_file.url }}" type="video/mp4">
+                                Ваш браузер не поддерживает html тэг &lt;h1&gt;video&lt;/h1&gt;.
+                            </video>
+                            <form class="center" action="{% url 'download_recognized_video' recognition.id %}" method="GET">
                                 {% csrf_token %}
-                                <input type="text" name="stat_type" hidden value="graph">
-                                <button type="submit" class="btn btn-primary">Скачать график</button>
+                                <button type="submit" class="btn btn-primary">Скачать видео</button>
                             </form>
-                        </span>
-                        <span>
-                            <img src="{{ recognition.stat_pie_chart.url }}" alt="" width="425" height="300">
-                            <form action="{% url 'download_recognition_statistics' recognition.id %}" method="GET">
-                                {% csrf_token %}
-                                <input type="text" name="stat_type" hidden value="pie_chart">
-                                <button type="submit" class="btn btn-primary">Скачать диаграмму</button>
-                            </form>
-                        </span>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <div class="center">Статистика:</div>
+                            <div class="statistics">
+                                <div>
+                                    {% if recognition.stat_graph %}
+                                        <img src="{{ recognition.stat_graph.url }}" alt="" width="425" height="300">
+                                        <form class="center" action="{% url 'download_recognition_statistics' recognition.id %}" method="GET">
+                                            {% csrf_token %}
+                                            <input type="text" name="stat_type" hidden value="graph">
+                                            <button type="submit" class="btn btn-primary">Скачать график</button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    {% if recognition.stat_pie_chart %}
+                                        <img src="{{ recognition.stat_pie_chart.url }}" alt="" width="425" height="300">
+                                        <form class="center" action="{% url 'download_recognition_statistics' recognition.id %}" method="GET">
+                                            {% csrf_token %}
+                                            <input type="text" name="stat_type" hidden value="pie_chart">
+                                            <button type="submit" class="btn btn-primary">Скачать диаграмму</button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                    </div>
-                {% endif %}
             {% endfor %}
         </div>
-
     </div>
 {% endblock %}

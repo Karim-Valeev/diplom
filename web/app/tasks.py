@@ -4,6 +4,7 @@ from pathlib import Path
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from server.celery import app
@@ -13,26 +14,40 @@ from app.models import Recognition, Video
 logger = get_task_logger('celery.task.server')
 
 
-# TODO: 1. Подумать над тем,
-#  чтобы добавить селери задаче своих кастомных статусов,
-#  тк появляются различные этапы всего действия,
-#  которые могут интересны пользователю или показательны
-#  для Дипломной системы
+DATA = settings.YOLO_DATA_FILE
+CFG = settings.YOLO_CONFIG_FILE
+WEIGHTS = settings.YOLO_WEIGHTS_FILE
 
-# TODO: 2. По сути это надо переделать в pandas DataFrame
-
-# TODO: 3. Отсортировать колонны по последнему элементу по убыванию
+ACTIONS = [
+    'at the blackboard', 'making notes', 'talking', 'using computer', 'using phone'
+]
 
 
-def _draw_pie_chart(action_counters: dict, pie_chart_path: Path):
-    sorted_action_counters = {
-        k: v for k, v in sorted(
-            action_counters.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )
-    }
-    counters = np.array(list(sorted_action_counters.values()))
+def _call_darknet(video_path, buffer_file, output_file_path):
+    """Recognizes actions in video file and generates txt outputs with frame info."""
+    logger.info('Executing darknet command...')
+    code = subprocess.call(
+        f'darknet detector demo {DATA} {CFG} {WEIGHTS} '
+        f'-dont_show {video_path} -out_filename {buffer_file} '
+        f'> {output_file_path}',
+        shell=True,
+    )
+    logger.info('darknet command returned code: %r', code)
+
+
+def _call_ffmpeg(buffer_file, result_video_path):
+    """Converts MPEG-4 codec video file to H.264."""
+    logger.info('Executing ffmpeg conversion command...')
+    code = subprocess.call(
+        f'ffmpeg -i {buffer_file} -y -loglevel quiet -c:v libx264 -crf 23 '
+        f'-preset medium {result_video_path}',
+        shell=True,
+    )
+    logger.info('ffmpeg command returned code: %r', code)
+
+
+def _draw_pie_chart(frames_df, pie_chart_path: Path):
+    counters = frames_df.iloc[-1]
 
     fig, (ax1, ax2) = plt.subplots(1, 2)
     fig.suptitle('Соотношение количества действий', fontsize=16)
@@ -42,7 +57,7 @@ def _draw_pie_chart(action_counters: dict, pie_chart_path: Path):
     labels = [
         '{0} - {1:1.2f} %'.format(
             k, (v / sum) * 100
-        ) for k, v in sorted_action_counters.items()
+        ) for k, v in counters.items()
     ]
     ax2.legend(
         title='Actions:',
@@ -83,18 +98,15 @@ def _choose_ticks_measure_unit(frames_amount: int, fps: int) -> str:
     return time_measure_unit
 
 
-def _draw_graph(frames_arr, action_counters, fps, graph_path):
-    frames_amount = frames_arr.shape[0]
-    frames_arr[frames_arr >= 0.2] = 1  # Threshold check.
-    frames_arr = np.cumsum(frames_arr, axis=0)  # Сumulating action frames.
-
+def _draw_graph(frames_df, fps, graph_path):
+    frames_amount = frames_df.shape[0]
     x_frames = np.arange(start=1, stop=frames_amount + 1)  # X axis indices.
     fig, ax = plt.subplots(1)
     fig.suptitle('График кол-ва действий в течение времени', fontsize=16)
     ax.set_xlim(left=0, right=frames_amount)
     ax.set_ylim(bottom=0, top=frames_amount)
-    for i, key in enumerate(action_counters):
-        ax.plot(x_frames, frames_arr[:, i], label=key)
+    for action in frames_df:
+        ax.plot(x_frames, frames_df[action], label=action)
     time_measure_unit = _choose_ticks_measure_unit(frames_amount, fps)
     ticks, _ = plt.xticks()
     ticks = ticks[ticks <= frames_amount]  # Fixing last outside tick.
@@ -112,46 +124,41 @@ def _draw_graph(frames_arr, action_counters, fps, graph_path):
     plt.clf()  # Clearing plot.
 
 
-# TODO: 4. Подумать над ситуацией,
-#  когда в кадре несколько действий одного типа!!!
-# TODO: 5. Выводить логи на важных этапах задачи
-
 def _draw_statistics(
         output_file_path: str, fps: int, pie_chart_path: Path, graph_path: Path
-):
+) -> bool:
+    logger.info('Creating statistics plots.')
     with (open(output_file_path, 'r') as file):
         text = file.read()
         start = text.find('FPS:')
         end = text.find('Stream closed.')
         if start == -1 or end == -1:
             logger.error('Wrong output file structure.')
-            return None, None
+            return False
         text = '\n' + text[start:end]
         frames = text.split('\nFPS:')
-        frames_amount = len(frames)
 
         # 2D np array with 5 columns for action classes probabilities.
-        frames_arr = np.zeros((frames_amount, 5))
-        action_counters = {
-            'at the blackboard': 0,
-            'making notes': 0,
-            'talking': 0,
-            'using computer': 0,
-            'using phone': 0,
-        }
+        frames_arr = np.zeros((len(frames), len(ACTIONS)))
+        frames_df = pd.DataFrame(data=frames_arr, columns=ACTIONS)
         for i, frame in enumerate(frames):
-            # Example: making notes: 27%
-            for j, key in enumerate(action_counters):
-                key_pos = frame.find(key)
-                if key_pos != -1:
-                    percent_start = key_pos + len(key + ': ')
-                    percent_end = frame.find('%', key_pos, key_pos + 25)
+            for action in frames_df:
+                action_pos = frame.find(action)
+                if action_pos != -1:
+                    percent_start = action_pos + len(action + ': ')
+                    percent_end = frame.find('%', action_pos, action_pos + 25)
                     percent = int(frame[percent_start:percent_end]) / 100
-                    frames_arr[i][j] = percent
-                    action_counters[key] += 1
+                    frames_df.loc[i, action] = percent
 
-        _draw_pie_chart(action_counters, pie_chart_path)
-        _draw_graph(frames_arr, action_counters, fps, graph_path)
+        frames_df[frames_df >= 0.2] = 1  # Threshold check.
+        frames_df = frames_df.cumsum()  # Cumulating action frames.
+        # Sorting columns by their highest values.
+        frames_df = frames_df.sort_values(by=[len(frames)-1], axis=1, ascending=False)
+
+        _draw_graph(frames_df, fps, graph_path)
+        _draw_pie_chart(frames_df, pie_chart_path)
+
+        return True
 
 
 def _prep_rec_filepath(path: str) -> str:
@@ -160,79 +167,61 @@ def _prep_rec_filepath(path: str) -> str:
 
 @app.task(bind=True)
 def recognize_actions(self, video_id: int):
-    video: Video = Video.objects.filter(id=video_id).first()
+    video = Video.objects.filter(id=video_id).first()
     if video:
-        data = settings.YOLO_DATA_FILE
-        cfg = settings.YOLO_CONFIG_FILE
-        weights = settings.YOLO_WEIGHTS_FILE
         video_path = video.file.path
         filename = video_path.split('/')[-1]
         filename_without_ext = filename.strip('.mp4')
 
-        # TODO: Вынести или укоротить
-        result_video_dir = Path(
-            f'{settings.MEDIA_ROOT}/users/{video.user_id}/recognitions/'
-        )
-        output_file_dir = Path(
-            f'{settings.MEDIA_ROOT}/users/{video.user_id}/outputs/'
-        )
-        pie_chart_dir = Path(
-            f'{settings.MEDIA_ROOT}/users/{video.user_id}/stats/pie_charts/'
-        )
-        graph_dir = Path(
-            f'{settings.MEDIA_ROOT}/users/{video.user_id}/stats/graphs/'
-        )
-
+        base_dir = Path(f'{settings.MEDIA_ROOT}/users/{video.user_id}')
+        result_video_dir = base_dir / 'recognitions'
         result_video_dir.mkdir(parents=True, exist_ok=True)
+        output_file_dir = base_dir / 'outputs'
         output_file_dir.mkdir(parents=True, exist_ok=True)
+        pie_chart_dir = base_dir / 'stats/pie_charts'
         pie_chart_dir.mkdir(parents=True, exist_ok=True)
+        graph_dir = base_dir / 'stats/graphs'
         graph_dir.mkdir(parents=True, exist_ok=True)
 
-        result_video_path = str(
-            result_video_dir / f'recognized_{filename}'
-        )
-        output_file_path = str(
-            output_file_dir / f'recognized_{filename_without_ext}.txt'
-        )
+        buffer_file = 'buffer.mp4'
+        result_video_path = str(result_video_dir / f'recognized_{filename}')
+        output_file_path = str(output_file_dir / f'recognized_{filename_without_ext}.txt')
 
-        logger.info('Executing darknet command...')
-        code = subprocess.call(
-            f'darknet detector demo {data} {cfg} {weights} '
-            f'-dont_show {video_path} -out_filename {result_video_path} '
-            f'> {output_file_path}',
-            shell=True
-        )
-        # TODO: 6. Какая-то проблема с сохраняемым форматом MPEG-4
-        logger.info('Command returned code: %r', code)
+        # TODO: Обдумать ситуацию, когда несколько действий в кадре
 
-        # Creating statistics plots:
+        # Recognize actions in video and generate txt output.
+        self.update_state(state='RECOGNIZING')
+        _call_darknet(video_path, buffer_file, output_file_path)
+        _call_ffmpeg(buffer_file, result_video_path)
+
         cam = cv2.VideoCapture(result_video_path)
         fps = round(cam.get(cv2.CAP_PROP_FPS))  # Get video frame rate.
 
+        # Creating statistics plots:
         pie_chart_path = (
             pie_chart_dir / f'recognized_{filename_without_ext}_pie_chart.jpg'
         )
         graph_path = graph_dir / f'recognized_{filename_without_ext}_graph.jpg'
-        _draw_statistics(output_file_path, fps, pie_chart_path, graph_path)
+        complete = _draw_statistics(output_file_path, fps, pie_chart_path, graph_path)
 
         task_id = self.request.id
-        rec = Recognition.objects.filter(
+        recognition = Recognition.objects.filter(
             video_id=video_id, task_id=task_id
         ).first()
-        if rec:
-            rec.recognized_file = _prep_rec_filepath(result_video_path)
-            rec.output_file = _prep_rec_filepath(output_file_path)
-            rec.stat_pie_chart = _prep_rec_filepath(str(pie_chart_path))
-            rec.stat_graph = _prep_rec_filepath(str(graph_path))
-            rec.save()
-            logger.info(
-                'Recognized video and statistics saved and stored in DB.'
-            )
+        if recognition:
+            recognition.recognized_file = _prep_rec_filepath(result_video_path)
+            recognition.output_file = _prep_rec_filepath(output_file_path)
+            msg = 'Recognized video %rsaved and stored in DB.'
+            if complete:
+                recognition.stat_pie_chart = _prep_rec_filepath(str(pie_chart_path))
+                recognition.stat_graph = _prep_rec_filepath(str(graph_path))
+                msg = msg % 'and statistics '
+            recognition.save()
+            logger.info(msg)
         else:
             logger.warning(
                 'There is no such recognition for video[%r] and task[%r].',
-                video_id,
-                task_id,
+                video_id, task_id,
             )
     else:
         logger.warning('There is no such video with id: %r', video_id)
