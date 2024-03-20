@@ -8,8 +8,6 @@ x-app: &app
     - ./.env
   restart: always
 
-# TODO: django, nginx, celery
-
 services:
   redis:
     <<: *app

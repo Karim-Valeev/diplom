@@ -1,12 +1,10 @@
 {% extends 'base.html' %}
 {%  block title %}Главная{% endblock %}
 {% block content %}
-
-{#  TODO: Добавить описание, что за сайтик и что делает  #}
-
-    <div class="profile center main-page-text">
+    <div class="default-text center">
+        <div>Данный ресурс предназначен для распознавания действий студентов на видео.</div>
         {% if user.is_authenticated %}
-            <div>
+            <div class="top-margin-10px">
                 <a href="{% url 'profile' %}">Профиль</a>
             </div>
             <div>
