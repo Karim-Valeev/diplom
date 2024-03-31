@@ -84,9 +84,9 @@ def _convert_frame_to_time(frame: int, time_measure_unit: str, fps: int):
     res = 0
     if time_measure_unit == 'fr':
         res = frame
-    elif time_measure_unit == 's':
+    elif time_measure_unit == 'sec':
         res = frame / fps
-    elif time_measure_unit == 'm':
+    elif time_measure_unit == 'min':
         res = frame / fps / 60
     elif time_measure_unit == 'h':
         res = frame / fps / 60 / 60
@@ -95,15 +95,14 @@ def _convert_frame_to_time(frame: int, time_measure_unit: str, fps: int):
 
 def _choose_ticks_measure_unit(frames_amount: int, fps: int) -> str:
     """Choosing X plot ticks time measure unit."""
-    time_measure_unit = ''
     if frames_amount / fps <= 1:
         time_measure_unit = 'fr'
     else:
         if frames_amount / fps / 60 <= 1:
-            time_measure_unit = 's'
+            time_measure_unit = 'sec'
         else:
             if frames_amount / fps / 60 / 60 <= 1:
-                time_measure_unit = 'm'
+                time_measure_unit = 'min'
             else:
                 time_measure_unit = 'h'
     return time_measure_unit
@@ -121,6 +120,7 @@ def _draw_graph(frames_df, fps, graph_path):
     time_measure_unit = _choose_ticks_measure_unit(frames_amount, fps)
     ticks, _ = plt.xticks()
     ticks = ticks[ticks <= frames_amount]  # Fixing last outside tick.
+    ticks = ticks[0::2]  # Taking every second tick.
     labels = [
         '%g %s' % (
             _convert_frame_to_time(fr, time_measure_unit, fps),
@@ -159,7 +159,7 @@ def _draw_statistics(
                 if probabilities:
                     action_amount = 0
                     for probability in probabilities:
-                        # TODO: *. Решать по трешхолду, когда будет понятно
+                        # TODO: 3. Решать по трешхолду, когда будет понятно
                         #  что стоит отметать, а что брать.
                         if int(probability) >= 20:  # Threshold check.
                             action_amount += 1
@@ -177,6 +177,10 @@ def _draw_statistics(
 
 def _prep_rec_filepath(path: str) -> str:
     return path.strip(f'{settings.MEDIA_ROOT}/')
+
+
+# TODO: 1. Добавить в файлик .names недостающие имена
+# TODO: 2. Нормально заполнить README.md
 
 
 @app.task(bind=True)
@@ -224,11 +228,11 @@ def recognize_actions(self, video_id: int):
         if recognition:
             recognition.recognized_file = _prep_rec_filepath(result_video_path)
             recognition.output_file = _prep_rec_filepath(output_file_path)
-            msg = 'Recognized video %rsaved and stored in DB.'
+            msg = 'Recognized video saved and stored in DB.'
             if complete:
                 recognition.stat_pie_chart = _prep_rec_filepath(str(pie_chart_path))
                 recognition.stat_graph = _prep_rec_filepath(str(graph_path))
-                msg = msg % 'and statistics '
+                msg = 'Recognized video and statistics saved and stored in DB.'
             recognition.save()
             logger.info(msg)
         else:
