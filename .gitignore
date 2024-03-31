@@ -13,6 +13,8 @@ venv/
 # Develop
 test.py
 test.mp4
+ml/train.txt
+ml/test.txt
 .cache
 .pytest_cache
 staticfiles/
