@@ -1,3 +1,5 @@
+import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -25,6 +27,7 @@ ACTIONS = [
 
 def _call_darknet(video_path, buffer_file, output_file_path):
     """Recognizes actions in video file and generates txt outputs with frame info."""
+    os.chdir(settings.BASE_DIR.parent)  # Because of .data file logic
     logger.info('Executing darknet command...')
     code = subprocess.call(
         f'darknet detector demo {DATA} {CFG} {WEIGHTS} '
@@ -33,6 +36,7 @@ def _call_darknet(video_path, buffer_file, output_file_path):
         shell=True,
     )
     logger.info('darknet command returned code: %r', code)
+    os.chdir(settings.BASE_DIR)
 
 
 def _call_ffmpeg(buffer_file, result_video_path):
@@ -46,13 +50,20 @@ def _call_ffmpeg(buffer_file, result_video_path):
     logger.info('ffmpeg command returned code: %r', code)
 
 
+def _rm_buffer_file(buffer_file):
+    """Removes temporary buffer file."""
+    subprocess.call(f'rm -f {buffer_file}', shell=True)
+    logger.info('Buffer file removed.')
+
+
 def _draw_pie_chart(frames_df, pie_chart_path: Path):
     counters = frames_df.iloc[-1]
-
     fig, (ax1, ax2) = plt.subplots(1, 2)
     fig.suptitle('Соотношение количества действий', fontsize=16)
     ax1.remove()
-    ax2.pie(counters, startangle=90, autopct='%1.2f%%', radius=1.5)
+    # Don't show values below 10%, because they can't fit.
+    def autopct(x): return f'{x:.2f}%' if x > 10 else ''
+    ax2.pie(counters, startangle=90, autopct=autopct, radius=1.5)
     sum = counters.sum()
     labels = [
         '{0} - {1:1.2f} %'.format(
@@ -138,19 +149,22 @@ def _draw_statistics(
         text = '\n' + text[start:end]
         frames = text.split('\nFPS:')
 
-        # 2D np array with 5 columns for action classes probabilities.
+        # 2D np array with 5 columns for action classes objects amount in frames.
         frames_arr = np.zeros((len(frames), len(ACTIONS)))
         frames_df = pd.DataFrame(data=frames_arr, columns=ACTIONS)
         for i, frame in enumerate(frames):
             for action in frames_df:
-                action_pos = frame.find(action)
-                if action_pos != -1:
-                    percent_start = action_pos + len(action + ': ')
-                    percent_end = frame.find('%', action_pos, action_pos + 25)
-                    percent = int(frame[percent_start:percent_end]) / 100
-                    frames_df.loc[i, action] = percent
+                pattern = action + r': (\d{2,3})%'
+                probabilities = re.findall(pattern, frame)
+                if probabilities:
+                    action_amount = 0
+                    for probability in probabilities:
+                        # TODO: *. Решать по трешхолду, когда будет понятно
+                        #  что стоит отметать, а что брать.
+                        if int(probability) >= 20:  # Threshold check.
+                            action_amount += 1
+                    frames_df.loc[i, action] = action_amount
 
-        frames_df[frames_df >= 0.2] = 1  # Threshold check.
         frames_df = frames_df.cumsum()  # Cumulating action frames.
         # Sorting columns by their highest values.
         frames_df = frames_df.sort_values(by=[len(frames)-1], axis=1, ascending=False)
@@ -183,16 +197,15 @@ def recognize_actions(self, video_id: int):
         graph_dir = base_dir / 'stats/graphs'
         graph_dir.mkdir(parents=True, exist_ok=True)
 
-        buffer_file = 'buffer.mp4'
+        buffer_file = str(base_dir / 'buffer.mp4')
         result_video_path = str(result_video_dir / f'recognized_{filename}')
         output_file_path = str(output_file_dir / f'recognized_{filename_without_ext}.txt')
-
-        # TODO: Обдумать ситуацию, когда несколько действий в кадре
 
         # Recognize actions in video and generate txt output.
         self.update_state(state='RECOGNIZING')
         _call_darknet(video_path, buffer_file, output_file_path)
         _call_ffmpeg(buffer_file, result_video_path)
+        _rm_buffer_file(buffer_file)
 
         cam = cv2.VideoCapture(result_video_path)
         fps = round(cam.get(cv2.CAP_PROP_FPS))  # Get video frame rate.
