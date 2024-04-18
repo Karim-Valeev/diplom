@@ -27,7 +27,7 @@ ACTIONS = [
 
 def _call_darknet(video_path, buffer_file, output_file_path):
     """Recognizes actions in video file and generates txt outputs with frame info."""
-    os.chdir(settings.BASE_DIR.parent)  # Because of .data file logic
+    os.chdir(settings.BASE_DIR.parent)  # Because of .data file logic.
     logger.info('Executing darknet command...')
     code = subprocess.call(
         f'darknet detector demo {DATA} {CFG} {WEIGHTS} '
