@@ -121,6 +121,6 @@ class Recognition(models.Model):
     updated = models.DateTimeField(_('обновлёно'), auto_now=True, db_index=True)
 
     class Meta:
-        ordering = ('id',)
+        ordering = ('-created',)
         verbose_name = _('распознавание')
         verbose_name_plural = _('распознавания')

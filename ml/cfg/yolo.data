@@ -1,4 +1,4 @@
-classes=2
+classes=5
 train=ml/train.txt
 test=ml/test.txt
 names=ml/cfg/yolo.names

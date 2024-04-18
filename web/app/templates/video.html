@@ -4,7 +4,7 @@
 {% block content %}
     <div class="account-info-text">
         <div>Название видео: <b>{{ video.title }}</b></div>
-        <div>Дата загрузки: {{ video.uploaded|date:"d.m.Y h:m" }}</div>
+        <div>Дата загрузки: {{ video.uploaded|date:"d.m.Y H:i" }}</div>
         <div>Плеер:</div>
         <video width="400" height="300" controls muted>
             <source src="{{ video.file.url }}" type="video/mp4">
@@ -35,7 +35,7 @@
         <div class="top-margin-10px">
             <b>Распознавания:</b>
             {% for recognition in video.recognitions.all %}
-                    <div class="top-margin-10px">Дата: {{ recognition.created|date:"d.m.Y h:m" }}</div>
+                    <div class="top-margin-10px">Дата: {{ recognition.created|date:"d.m.Y H:i" }}</div>
                     <div class="recognition">
                         <div>
                             <div class="center">Результаты распознавания:</div>
