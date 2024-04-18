@@ -7,6 +7,7 @@ repos:
       - id: check-json
       - id: check-yaml
       - id: trailing-whitespace
+        exclude: 'README.md'
       - id: end-of-file-fixer
       - id: check-added-large-files
         args: ['--maxkb=50000']

@@ -18,9 +18,9 @@
 Переместить его в директорию ml/
 
 ### Настройка и запуск:
-Docker:
-`docker compose up -d -build`
-Django:
+Docker:  
+`docker compose up -d -build`  
+Django:  
 ```
 python3.10 -m venv env
 source env/bin/activate
@@ -31,8 +31,8 @@ python manage.py collectstatic
 python manage.py createsuperuser
 python manage.py runserver 0.0.0.0:8000
 ```
-Celery:
-`celery -A server worker -l INFO`
+Celery:  
+`celery -A server worker -l INFO`  
 ML:
 ```
 nvidia-smi  # Проверка того, что у CUDA есть свободное место для работы.
