@@ -19,7 +19,7 @@ logger = get_task_logger('celery.task.server')
 DATA = settings.YOLO_DATA_FILE
 CFG = settings.YOLO_CONFIG_FILE
 WEIGHTS = settings.YOLO_WEIGHTS_FILE
-
+THRESHOLD = settings.CONF_THRESHOLD
 ACTIONS = [
     'at the blackboard', 'making notes', 'talking', 'using computer', 'using phone'
 ]
@@ -159,9 +159,7 @@ def _draw_statistics(
                 if probabilities:
                     action_amount = 0
                     for probability in probabilities:
-                        # TODO: 3. Решать по трешхолду, когда будет понятно
-                        #  что стоит отметать, а что брать.
-                        if int(probability) >= 20:  # Threshold check.
+                        if int(probability) >= THRESHOLD:  # Confidence threshold check.
                             action_amount += 1
                     frames_df.loc[i, action] = action_amount
 
@@ -177,10 +175,6 @@ def _draw_statistics(
 
 def _prep_rec_filepath(path: str) -> str:
     return path.strip(f'{settings.MEDIA_ROOT}/')
-
-
-# TODO: 1. Добавить в файлик .names недостающие имена
-# TODO: 2. Нормально заполнить README.md
 
 
 @app.task(bind=True)
